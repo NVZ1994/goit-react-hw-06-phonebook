@@ -1,33 +1,47 @@
-import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { Notify } from 'notiflix';
+import { addContact } from 'redux/contactsSlice';
 
-const INITIAL_STATE = {
-  name: '',
-  phone: '',
-};
+export function Form() {
+  const [name, setName] = useState('');
+  const [number, setNumber] = useState('');
 
-const Form = ({ onSubmit }) => {
-  const [state, setState] = useState({ ...INITIAL_STATE });
+  const dispatch = useDispatch();
+  const contacts = useSelector(state => state.contacts.contacts);
 
-  const handleInputChange = (event) => {
+  const handleInputChange = event => {
     const { name, value } = event.currentTarget;
 
-    setState((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    switch (name) {
+      case 'name':
+        setName(value);
+        break;
+      case 'number':
+        setNumber(value);
+        break;
+      default:
+        return;
+    }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = event => {
     event.preventDefault();
-    const contact = state;
-    onSubmit(contact);
-    reset(event);
+    const existingContact = contacts.find(el => el.name === name);
+
+    if (existingContact) {
+      window.alert(`${name} is already in your contacts`);
+      return;
+    }
+
+    dispatch(addContact({ name, number }));
+    reset();
+    Notify.success(`${name} has been added to your contacts`);
   };
 
-  const reset = (event) => {
-    setState({ ...INITIAL_STATE });
-    event.currentTarget.reset();
+  const reset = () => {
+    setName('');
+    setNumber('');
   };
 
   return (
@@ -38,7 +52,7 @@ const Form = ({ onSubmit }) => {
           className="Form__input"
           type="text"
           name="name"
-          value={state.name}
+          value={name}
           onChange={handleInputChange}
           pattern="^[a-zA-Zа-яА-Я]+(([' -][a-zA-Zа-яА-Я ])?[a-zA-Zа-яА-Я]*)*$"
           title="Name may contain only letters, apostrophe, dash and spaces. For example Adrian, Jacob Mercer, Charles de Batz de Castelmore d'Artagnan"
@@ -50,8 +64,8 @@ const Form = ({ onSubmit }) => {
         <input
           className="Form__input"
           type="tel"
-          name="phone"
-          value={state.phone}
+          name="number"
+          value={number}
           onChange={handleInputChange}
           pattern="\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}"
           title="Phone number must be digits and can contain spaces, dashes, parentheses and can start with +"
@@ -63,10 +77,4 @@ const Form = ({ onSubmit }) => {
       </button>
     </form>
   );
-};
-
-Form.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-};
-
-export default Form;
+}
